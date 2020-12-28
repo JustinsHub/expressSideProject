@@ -33,6 +33,9 @@ class User {
                         [this.firstName, this.lastName, this.username, this.password, this.id])
         
     }
+    async delete(){
+        await db.query(`DELETE FROM users WHERE id=$1`, [this.id])
+    }
 }
 
 module.exports = User;

@@ -46,4 +46,14 @@ router.patch('/:id/edit', async(req,res,next)=>{
     }
 })
 
+router.delete('/:id', async(req,res,next)=>{
+    try{
+    const user = await User.getUserId(req.params.id)
+    await user.delete()
+    return res.json({user: "Deleted"})
+    }catch(e){
+        next(e)
+    }
+})
+
 module.exports = router
