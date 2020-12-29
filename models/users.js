@@ -1,5 +1,7 @@
 const db = require('../db')
 const ExpressError = require('../expressError')
+const bcrypt = require('bcrypt')
+const {BCRYPT_WORK_FACTOR} = require('../config')
 
 class User {
     constructor(id, firstName, lastName, username, password){
@@ -23,10 +25,24 @@ class User {
         return new User(u.id ,u.firstName, u.lastName, u.username)
     }
     static async register(first, last, user, pw){
+        const hashPassword = await bcrypt.hash(pw, BCRYPT_WORK_FACTOR)
         const result = await db.query(`INSERT INTO users (first_name, last_name, username, password) 
-                                    VALUES ($1,$2,$3,$4) RETURNING username`, [first, last, user, pw])
+                                    VALUES ($1,$2,$3,$4) RETURNING username`, [first, last, user, hashPassword])
         const newUser = result.rows[0]
         return new User(newUser)
+    }
+
+    static async login(username, password){
+        if(!username || !password ){
+            throw new ExpressError('Username/Password required', 404)
+        }
+        const result = await db.query(`SELECT username, password FROM users WHERE username=$1`, [username]) // Looking for username in DB to login
+        const user = result.rows[0]
+        if(user){
+            if(await bcrypt.compare(password, user.password)){
+                return {message: `Welcome ${username}`}
+            }
+        }
     }
     async save(){
         await db.query(`UPDATE users SET first_name=$1, last_name=$2, username=$3, password=$4 WHERE id=$5`,
@@ -34,6 +50,9 @@ class User {
         
     }
     async delete(){
+        if(this.id === undefined){
+            throw new ExpressError('Invalid User', 404)
+        }
         await db.query(`DELETE FROM users WHERE id=$1`, [this.id])
     }
 }

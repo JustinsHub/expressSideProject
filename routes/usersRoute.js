@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const db = require('../db')
+const ExpressError = require('../expressError')
 const User = require('../models/users')
 
 router.get('/', async(req,res,next)=>{
@@ -27,6 +28,19 @@ router.post('/register', async(req,res,next)=>{
     const {first_name, last_name, username, password} = req.body
     const newUser = await User.register(first_name, last_name, username, password)
     return res.status(201).json(newUser)
+    }catch(e){
+        next(e)
+    }
+})
+
+router.post('/login', async(req, res, next)=>{
+    try{
+        const {username, password} = req.body
+        if(!username || !password ){
+            throw new ExpressError('Username/Password required', 404)
+        }
+        const user = await User.login(username, password)
+        return res.json(user)
     }catch(e){
         next(e)
     }
