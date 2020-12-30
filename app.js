@@ -2,6 +2,7 @@ const express = require('express')
 const morgan = require('morgan')
 const ExpressError = require('./expressError')
 const userRoute = require('./routes/usersRoute')
+const {authenticateJWT} = require('./middleware/auth')
 
 const app = express()
 
@@ -9,6 +10,7 @@ const app = express()
 app.use(morgan('dev'))
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
+app.use(authenticateJWT)
 
 //ROUTES
 app.use('/', userRoute)

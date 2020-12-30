@@ -1,8 +1,10 @@
 const express = require('express')
-const router = express.Router()
+const router = new express.Router()
 const db = require('../db')
 const ExpressError = require('../expressError')
 const User = require('../models/users')
+const {authorizedUser} = require('../middleware/auth')
+
 
 router.get('/', async(req,res,next)=>{
     try{
@@ -13,7 +15,15 @@ router.get('/', async(req,res,next)=>{
     }
 })
 
-router.get('/:id', async(req,res,next)=>{
+router.get('/authorized', authorizedUser, (req, res, next)=>{
+    try{
+    return res.json('Welcome user. You made it.')
+    }catch(e){
+        next(e)
+    }
+})
+
+router.get('/:id', async(req,res,next)=>{ //:id must be after any other /path names so it wont conflict unless it has another ex: /:id/edit
     try{
     const id = req.params.id
     const user = await User.getUserId(id)
@@ -22,6 +32,7 @@ router.get('/:id', async(req,res,next)=>{
         next(e)
     }
 })
+
 
 router.post('/register', async(req,res,next)=>{
     try{
@@ -36,9 +47,6 @@ router.post('/register', async(req,res,next)=>{
 router.post('/login', async(req, res, next)=>{
     try{
         const {username, password} = req.body
-        if(!username || !password ){
-            throw new ExpressError('Username/Password required', 404)
-        }
         const user = await User.login(username, password)
         return res.json(user)
     }catch(e){

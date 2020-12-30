@@ -32,7 +32,8 @@ class User {
                                     VALUES ($1,$2,$3,$4) RETURNING username`, [first, last, user, hashPassword])
         const newUser = result.rows[0]
         if(newUser){
-        const token = jwt.sign({newUser: newUser.id}, SECRET_KEY)
+        const token = jwt.sign({user}, SECRET_KEY)
+        console.log(token)
         return new User(newUser)
         }
     }
