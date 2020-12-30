@@ -4,6 +4,8 @@ const db = require('../db')
 const ExpressError = require('../expressError')
 const User = require('../models/users')
 const {authorizedUser} = require('../middleware/auth')
+const jwt = require('jsonwebtoken')
+const {SECRET_KEY} = require('../config')
 
 
 router.get('/', async(req,res,next)=>{
@@ -48,7 +50,8 @@ router.post('/login', async(req, res, next)=>{
     try{
         const {username, password} = req.body
         const user = await User.login(username, password)
-        return res.json(user)
+        const token = jwt.sign({user}, SECRET_KEY)
+        return res.json({token})
     }catch(e){
         next(e)
     }

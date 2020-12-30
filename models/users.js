@@ -29,27 +29,24 @@ class User {
     static async register(first, last, user, pw){
         const hashPassword = await bcrypt.hash(pw, BCRYPT_WORK_FACTOR)
         const result = await db.query(`INSERT INTO users (first_name, last_name, username, password) 
-                                    VALUES ($1,$2,$3,$4) RETURNING username`, [first, last, user, hashPassword])
+                                    VALUES ($1,$2,$3,$4) RETURNING id`, [first, last, user, hashPassword])
         const newUser = result.rows[0]
         if(newUser){
-        const token = jwt.sign({user}, SECRET_KEY)
-        console.log(token)
+        const token = jwt.sign(newUser.id, SECRET_KEY)
         return new User(newUser)
+        }else{
+            throw new ExpressError('Invalid input', 404)
         }
     }
 
     static async login(username, password){
-        if(!username || !password ){
-            throw new ExpressError('Username/Password required', 404)
-        }
         const result = await db.query(`SELECT id, username, password FROM users WHERE username=$1`, [username]) // Looks for username in DB to login
         const user = result.rows[0]
-        if(user){
-            if(await bcrypt.compare(password, user.password)){
-                const token = jwt.sign({user: user.id}, SECRET_KEY)
-                return {message: `Welcome ${username}`, token}
-            }
+        if(!user || !username || !password){
+            throw new ExpressError('Username/Password required', 404)
         }
+        return user && await bcrypt.compare(password, user.password)
+        
     }
     async save(){
         await db.query(`UPDATE users SET first_name=$1, last_name=$2, username=$3, password=$4 WHERE id=$5`,
